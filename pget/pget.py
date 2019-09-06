@@ -43,24 +43,6 @@ def step_weights(model, traces, lr, reward, optimizer=None):
     optimizer.apply_gradients(zip(traces2, model.trainable_variables))
 
 ## UTILS ##
-
-def continuous_agent(obs_size, action_size, action_range, layer_sizes=[32, 32], rnn=None, acti="tanh"):
-  low = action_range[0]
-  high = action_range[1]
-
-  model = dense_stack(obs_size, action_size, layer_sizes, rnn, acti, out_acti="tanh",
-  out_lambda=lambda x: low + (x + 1) / 2 * (high - low))
-
-  loss = tf.losses.mean_squared_error
-
-  return model, loss
-
-def discrete_agent(obs_size, action_size, layer_sizes=[32, 32], rnn=None, acti="relu"):
-  model = dense_stack(obs_size, action_size, layer_sizes, rnn, acti, out_acti="softmax")
-  loss = categorical_crossentropy
-
-  return model, loss
-
 def categorical_crossentropy(y_true, y_pred):
   #yes, this is bad practice
   _epsilon = 1e-7 #TODO: hardcoded epsilon
