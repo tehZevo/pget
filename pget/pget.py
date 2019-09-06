@@ -1,8 +1,9 @@
 import tensorflow as tf
 import numpy as np
+from tensorflow.keras.utils import to_categorical
 
-#for RNN compatibility
-from ml_utils.keras import get_states, set_states
+from ml_utils.keras import get_states, set_states #for RNN compatibility
+from ml_utils.model_builders import dense_stack
 
 def create_traces(model):
   traces = []
@@ -40,3 +41,50 @@ def step_weights(model, traces, lr, reward):
     traces2 = [t * reward for t in traces] #modulate by reward
     #then apply normally
     optimizer.apply_gradients(zip(traces2, model.trainable_variables))
+
+## UTILS ##
+
+def continuous_agent(obs_size, action_size, action_range, layer_sizes=[32, 32], rnn=None, acti="tanh"):
+  low = action_range[0]
+  high = action_range[1]
+
+  model = dense_stack(obs_size, action_size, layer_sizes, rnn, acti, out_acti="tanh",
+  out_lambda=lambda x: low + (x + 1) / 2 * (high - low))
+
+  loss = tf.losses.mean_squared_error
+
+  return model, loss
+
+def discrete_agent(obs_size, action_size, layer_sizes=[32, 32], rnn=None, acti="relu"):
+  model = dense_stack(obs_size, action_size, layer_sizes, rnn, acti, out_acti="softmax")
+  loss = categorical_crossentropy
+
+  return model, loss
+
+def categorical_crossentropy(y_true, y_pred):
+  #yes, this is bad practice
+  _epsilon = 1e-7 #TODO: hardcoded epsilon
+  #use keras trick to recover logits from softmax:
+  #https://github.com/keras-team/keras/issues/11801
+  y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
+  y_pred = tf.log(y_pred)
+  return tf.losses.softmax_cross_entropy(y_true, y_pred)
+
+def explore_continuous(x, noise_stdev=0.1):
+  return x + np.random.normal(0, noise_stdev, x.shape).astype("float32") #y u output float64
+
+def explore_discrete(x, epsilon=0.01):
+  #choose randomly
+  action = np.random.choice(len(x), p=x)
+  #add eps.greedy on top
+  if np.random.random() < epsilon:
+    action = np.random.choice(len(x))
+
+  return to_categorical(action, len(x))
+
+def apply_regularization(model, r):
+  names = [weight.name for layer in model.layers for weight in layer.weights]
+  weights = model.get_weights()
+
+  weights = [weight * (1 - r) if "bias" not in name else weight for name, weight in zip(names, weights)]
+  model.set_weights(weights)
