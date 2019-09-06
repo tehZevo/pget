@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 #for RNN compatibility
-from ml_utils.rnn import get_states, set_states
+from ml_utils.keras import get_states, set_states
 
 def create_traces(model):
   traces = []
