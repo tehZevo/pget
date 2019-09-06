@@ -31,7 +31,7 @@ def update_traces(model, states, traces, x, y_true, loss, lambda_=0.9):
   #  (this probably doesnt need to be done unless the model is stochastic or something...)
   set_states(model, saved_states)
 
-def step_weights(model, traces, lr, reward):
+def step_weights(model, traces, lr, reward, optimizer=None):
   if optimizer == None:
     #step direction
     alpha = lr * reward
