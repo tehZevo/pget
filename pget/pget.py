@@ -81,10 +81,3 @@ def explore_discrete(x, epsilon=0.01):
     action = np.random.choice(len(x))
 
   return to_categorical(action, len(x))
-
-def apply_regularization(model, r):
-  names = [weight.name for layer in model.layers for weight in layer.weights]
-  weights = model.get_weights()
-
-  weights = [weight * (1 - r) if "bias" not in name else weight for name, weight in zip(names, weights)]
-  model.set_weights(weights)
