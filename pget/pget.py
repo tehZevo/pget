@@ -74,8 +74,8 @@ def explore_discrete(x, epsilon=0.01):
   return to_categorical(action, len(x))
 
 def explore_multibinary(xs, epsilon=0.01):
-  action = [np.random.choice([0, 1], p=[x, 1-x]) for x in xs]
-  action = [np.random.choice([0, 1]) if np.random.random() < epsilon else x for x in action]
+  action = [np.random.choice([0, 1], p=[1-x, x]) for x in xs]
+  action = [(np.random.choice([0, 1]) if np.random.random() < epsilon else x) for x in action]
 
   return np.array(action)
 
