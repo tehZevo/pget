@@ -44,13 +44,22 @@ def step_weights(model, traces, lr, reward, optimizer=None):
 
 ## UTILS ##
 def categorical_crossentropy(y_true, y_pred):
-  #yes, this is bad practice
+  #yes, this is (probably) bad practice
   _epsilon = 1e-7 #TODO: hardcoded epsilon
   #use keras trick to recover logits from softmax:
   #https://github.com/keras-team/keras/issues/11801
   y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
   y_pred = tf.log(y_pred)
   return tf.losses.softmax_cross_entropy(y_true, y_pred)
+
+def binary_crossentropy(y_true, y_pred):
+  #yes, this is (probably) bad practice
+  _epsilon = 1e-7 #TODO: hardcoded epsilon
+  #use keras trick to recover logits from softmax:
+  #https://github.com/keras-team/keras/issues/11801
+  y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
+  y_pred = tf.log(y_pred)
+  return tf.losses.sigmoid_cross_entropy(y_true, y_pred)
 
 def explore_continuous(x, noise_stdev=0.1):
   return x + np.random.normal(0, noise_stdev, x.shape).astype("float32") #y u output float64
@@ -63,3 +72,11 @@ def explore_discrete(x, epsilon=0.01):
     action = np.random.choice(len(x))
 
   return to_categorical(action, len(x))
+
+def explore_multibinary(xs, epsilon=0.01):
+  action = [np.random.choice([0, 1], p=[x, 1-x]) for x in xs]
+  action = [np.random.choice([0, 1]) if np.random.random() < epsilon else x for x in action]
+
+  return np.array(action)
+
+#TODO: tuple and multidiscrete
