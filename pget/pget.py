@@ -32,6 +32,8 @@ def update_traces(model, states, traces, x, y_true, loss, lambda_=0.9):
   set_states(model, saved_states)
 
 def step_weights(model, traces, lr, reward, optimizer=None):
+  if reward > 0:
+    print(np.round(reward, 2))
   if optimizer == None:
     #step direction
     alpha = lr * reward
@@ -53,13 +55,7 @@ def categorical_crossentropy(y_true, y_pred):
   return tf.losses.softmax_cross_entropy(y_true, y_pred)
 
 def binary_crossentropy(y_true, y_pred):
-  #yes, this is (probably) bad practice
-  _epsilon = 1e-7 #TODO: hardcoded epsilon
-  #use keras trick to recover logits from softmax:
-  #https://github.com/keras-team/keras/issues/11801
-  y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
-  y_pred = tf.log(y_pred)
-  return tf.losses.sigmoid_cross_entropy(y_true, y_pred)
+  return tf.keras.losses.binary_crossentropy(y_true, y_pred)
 
 def explore_continuous(x, noise_stdev=0.1):
   return x + np.random.normal(0, noise_stdev, x.shape).astype("float32") #y u output float64
