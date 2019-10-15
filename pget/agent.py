@@ -8,6 +8,7 @@ from .pget import create_traces, update_traces, step_weights
 from .pget import explore_continuous, explore_discrete, explore_multibinary
 
 #TODO: saving/loading?
+#TODO: args/kwargs for get_action/train, maybe accept "done" in train
 
 class Agent():
   """Note: requires TF eager"""
@@ -29,6 +30,7 @@ class Agent():
     self.alt_trace_method = alt_trace_method
     self.regularization = regularization_scale * self.lr
     self.noise = noise
+    self.last_advantage = 0
 
     #TODO: support more optimizers by name... or by object
     self.optimizer = None if optimizer is None else tf.train.AdamOptimizer(self.lr)
@@ -85,6 +87,7 @@ class Agent():
     #update reward mean/deviation
     self.reward_mean += delta_reward * (1 - self.gamma)
     self.reward_deviation += (np.abs(delta_reward) - self.reward_deviation) * (1 - self.gamma)
+    self.last_advantage = advantage
 
     #step network in direction of trace gradient * lr * reward
     apply_regularization(self.model, self.regularization)
