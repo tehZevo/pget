@@ -59,6 +59,8 @@ def explore_continuous(x, noise_stdev=0.1):
   return x + np.random.normal(0, noise_stdev, x.shape).astype("float32") #y u output float64
 
 def explore_discrete(x, epsilon=0.01):
+  x = np.array(x)
+  x = x / np.sum(x)
   #choose randomly
   action = np.random.choice(len(x), p=x)
   #add eps.greedy on top
