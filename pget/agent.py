@@ -9,12 +9,14 @@ from .pget import explore_continuous, explore_discrete, explore_multibinary
 
 #TODO: saving/loading?
 #TODO: args/kwargs for get_action/train, maybe accept "done" in train
+#TODO: actually support alt_trace_method.... (see pget.update_traces...)
 
 class Agent():
   """Note: requires TF eager"""
   def __init__(self, model, action_type="continuous", alt_trace_method=False,
     epsilon=1e-7, advantage_clip=1, gamma=0.99, lr=1e-4, lambda_=0.9,
-    regularization_scale=1e-4, optimizer="adam", noise=0.1, initial_deviation=10):
+    regularization_scale=1e-4, optimizer="adam", noise=0.1, initial_deviation=10,
+    late_squash=True):
     self.model = model
 
     #TODO: is this needed?
@@ -31,6 +33,7 @@ class Agent():
     self.regularization = regularization_scale * self.lr
     self.noise = noise
     self.last_advantage = 0
+    self.late_squash = late_squash
 
     #TODO: support more optimizers by name... or by object
     self.optimizer = None if optimizer is None else tf.train.AdamOptimizer(self.lr)
@@ -50,6 +53,13 @@ class Agent():
       explore_func = explore_continuous
     else:
       raise ValueError("Unknown action type '{}'".format(action_type))
+
+    #haha jk.
+    if self.late_squash:
+      explore_func = explore_continuous
+      self.loss = tf.losses.mean_squared_error
+      self.squash = (tf.nn.softmax if self.action_type == "discrete" else
+        tf.nn.sigmoid if self.action_type == "multibinary" else None)
 
     self.explore = lambda x: explore_func(x, self.noise)
 
@@ -74,6 +84,13 @@ class Agent():
     #calc gradient for modified action & update traces based on gradient
     update_traces(self.model, pre_step_state, self.traces,
       np.expand_dims(state, 0), np.expand_dims(action, 0), self.loss, lambda_=self.lambda_)
+
+    #if discrete/multibinary, then squash
+    if self.late_squash and self.action_type != "continuous":
+      action = self.squash(action)
+      #explore with 0 noise just to get 0s/1s
+      action = (explore_discrete(action, 0) if self.action_type == "discrete" else
+        explore_multibinary(action, 0) if self.action_type == "multibinary" else action)
 
     return action
 

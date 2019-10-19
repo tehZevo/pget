@@ -31,11 +31,11 @@ while True:
   for i in range(action_repeat):
     s, step_r, done, info = env.step(a)
     r += step_r
+    env.render()
     if done:
       break
 
   agent.train(r)
-  env.render()
 
   if done:
     s = env.reset()
