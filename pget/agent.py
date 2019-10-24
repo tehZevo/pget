@@ -16,7 +16,7 @@ class Agent():
   def __init__(self, model, optimizer=None, action_type="continuous", alt_trace_method=False,
     epsilon=1e-7, advantage_clip=1, gamma=0.99, lambda_=0.9,
     regularization=1e-6, noise=0.1, initial_deviation=1,
-    late_squash=True):
+    late_squash=True, use_squared_deviation=True):
     self.model = model
 
     #TODO: is this needed?
@@ -35,7 +35,8 @@ class Agent():
     self.late_squash = late_squash
     self.optimizer = (optimizer if optimizer is not None else
       tf.keras.optimizers.Adam(1e-3, clipnorm=1.0))
-
+    self.use_squared_deviation = use_squared_deviation
+    
     #resolve exploration method/loss function
     self.action_type = action_type.lower()
 
@@ -71,8 +72,12 @@ class Agent():
     state = state.astype("float32")
     #save pre-step hidden state
     pre_step_state = get_states(self.model)
+
     #calc action from state
-    action = self.model.predict(np.expand_dims(state, 0))[0]
+    #action = self.model.predict(np.expand_dims(state, 0))[0]
+    #https://github.com/keras-team/keras/issues/13118
+    #https://github.com/tensorflow/tensorflow/issues/33009
+    action = self.model.predict_on_batch(np.expand_dims(state, 0))[0]
 
     #apply noise to action
     action = self.explore(action)
@@ -101,7 +106,11 @@ class Agent():
 
     #update reward mean/deviation
     self.reward_mean += delta_reward * (1 - self.gamma)
-    self.reward_deviation += (np.abs(delta_reward) - self.reward_deviation) * (1 - self.gamma)
+    #TODO: experimental square instead of abs
+    if self.use_squared_deviation:
+      self.reward_deviation += (delta_reward ** 2 - self.reward_deviation) * (1 - self.gamma)
+    else:
+      self.reward_deviation += (np.abs(delta_reward) - self.reward_deviation) * (1 - self.gamma)
     self.last_advantage = advantage
 
     #step network in direction of trace gradient * advantage
