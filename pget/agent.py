@@ -4,7 +4,7 @@ import numpy as np
 from ml_utils.keras import get_states, set_states, apply_regularization
 from ml_utils.model_builders import dense_stack
 
-from .pget import create_traces, update_traces, step_weights
+from .pget import create_traces, update_traces, step_weights_opt
 from .pget import explore_continuous, explore_discrete, explore_multibinary
 
 #TODO: saving/loading?
