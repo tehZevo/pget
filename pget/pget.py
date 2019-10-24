@@ -31,16 +31,16 @@ def update_traces(model, states, traces, x, y_true, loss, lambda_=0.9):
   #  (this probably doesnt need to be done unless the model is stochastic or something...)
   set_states(model, saved_states)
 
-def step_weights(model, traces, lr, reward, optimizer=None):
-  if optimizer == None:
-    #step direction
-    alpha = lr * reward
-    for weight, trace in zip(model.trainable_variables, traces):
-      weight.assign_add(-trace * alpha) #gradient descent modulated by reward
-  else:
-    traces2 = [t * reward for t in traces] #modulate by reward
-    #then apply normally
-    optimizer.apply_gradients(zip(traces2, model.trainable_variables))
+def step_weights(model, traces, lr, reward):
+  #step direction
+  alpha = lr * reward
+  for weight, trace in zip(model.trainable_variables, traces):
+    weight.assign_add(-trace * alpha) #gradient descent modulated by reward
+
+def step_weights_opt(model, traces, reward, optimizer):
+  traces = [t * reward for t in traces] #modulate by reward
+  #then apply normally
+  optimizer.apply_gradients(zip(traces, model.trainable_variables))
 
 ## UTILS ##
 def categorical_crossentropy(y_true, y_pred):

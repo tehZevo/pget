@@ -13,9 +13,9 @@ from .pget import explore_continuous, explore_discrete, explore_multibinary
 
 class Agent():
   """Note: requires TF eager"""
-  def __init__(self, model, action_type="continuous", alt_trace_method=False,
-    epsilon=1e-7, advantage_clip=1, gamma=0.99, lr=1e-4, lambda_=0.9,
-    regularization_scale=1e-4, optimizer="adam", noise=0.1, initial_deviation=10,
+  def __init__(self, model, optimizer=None, action_type="continuous", alt_trace_method=False,
+    epsilon=1e-7, advantage_clip=1, gamma=0.99, lambda_=0.9,
+    regularization_scale=1e-4, noise=0.1, initial_deviation=1,
     late_squash=True):
     self.model = model
 
@@ -34,9 +34,8 @@ class Agent():
     self.noise = noise
     self.last_advantage = 0
     self.late_squash = late_squash
-
-    #TODO: support more optimizers by name... or by object
-    self.optimizer = None if optimizer is None else tf.train.AdamOptimizer(self.lr)
+    self.optimizer = (optimizer if optimizer is not None else
+      tf.keras.optimizers.Adam(1e-3, clipnorm=1.0))
 
     #resolve exploration method/loss function
     self.action_type = action_type.lower()
@@ -108,4 +107,4 @@ class Agent():
 
     #step network in direction of trace gradient * lr * reward
     apply_regularization(self.model, self.regularization)
-    step_weights(self.model, self.traces, self.lr, advantage, self.optimizer)
+    step_weights_opt(self.model, self.traces, advantage, self.model.optimizer)
