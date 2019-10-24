@@ -15,7 +15,7 @@ class Agent():
   """Note: requires TF eager"""
   def __init__(self, model, optimizer=None, action_type="continuous", alt_trace_method=False,
     epsilon=1e-7, advantage_clip=1, gamma=0.99, lambda_=0.9,
-    regularization_scale=1e-4, noise=0.1, initial_deviation=1,
+    regularization=1e-6, noise=0.1, initial_deviation=1,
     late_squash=True):
     self.model = model
 
@@ -27,10 +27,9 @@ class Agent():
     self.eps = epsilon
     self.advantage_clip = advantage_clip
     self.gamma = gamma
-    self.lr = lr
     self.lambda_ = lambda_
     self.alt_trace_method = alt_trace_method
-    self.regularization = regularization_scale * self.lr
+    self.regularization = regularization
     self.noise = noise
     self.last_advantage = 0
     self.late_squash = late_squash
@@ -105,6 +104,6 @@ class Agent():
     self.reward_deviation += (np.abs(delta_reward) - self.reward_deviation) * (1 - self.gamma)
     self.last_advantage = advantage
 
-    #step network in direction of trace gradient * lr * reward
+    #step network in direction of trace gradient * advantage
     apply_regularization(self.model, self.regularization)
     step_weights_opt(self.model, self.traces, advantage, self.model.optimizer)
